@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const Item = require("../model/Item");
+const verify = require("../middleware/auth");
 
 // Retrieve all items
 // @route GET /api/items
@@ -16,7 +17,7 @@ router.get("/", async (req, res) => {
 
 // Add a new item
 // @route GET /api/items
-router.post("/", async (req, res) => {
+router.post("/", verify, async (req, res) => {
   try {
     const { body } = req;
 
@@ -35,7 +36,7 @@ router.post("/", async (req, res) => {
 
 // Update an item
 // @route POST /api/items/:id
-router.put("/:id", async (req, res) => {
+router.put("/:id", verify, async (req, res) => {
   try {
     const { id } = req.params;
     const { body } = req;
@@ -58,7 +59,7 @@ router.put("/:id", async (req, res) => {
 
 // Delete an item
 // @route DELETE /api/items/:id
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", verify, async (req, res) => {
   try {
     const { id } = req.params;
 
