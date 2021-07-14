@@ -48,10 +48,20 @@ router.post("/login", async (req, res) => {
     const isValid = await bcrypt.compare(password, user.password);
     if (!isValid) throw new Error("Passowrd is not correct");
 
-    const token = jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET);
-    res.header('auth-token', token).send(token);
-
-    // res.status(200).json({ message: "User is logged in" });
+    const token = jwt.sign(
+      { _id: user._id, username: user.username },
+      process.env.TOKEN_SECRET,
+      { expiresIn: 3600 }
+    );
+    res
+      .header("auth-token", token)
+      .status(200)
+      .json({
+        message: "User is logged in",
+        token,
+        userid: user._id,
+        username,
+      });
   } catch (error) {
     if (
       error.message === "User does not exist" ||

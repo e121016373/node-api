@@ -1,17 +1,22 @@
 const jwt = require("jsonwebtoken");
 
 const auth = (req, res, next) => {
-  const token = req.header("auth-token");
-  if (!token) res.status(401).send("Token Missing");
-
   try {
+    const token = req.header("auth-token");
+    if (!token) throw new Error("Token Missing");
+
     req.user = jwt.verify(token, process.env.TOKEN_SECRET);
+    if (!req.user) throw new Error("Invalid Token");
+
     next();
   } catch (error) {
-    if (error.message === "Token Missing") {
-      res.status(401).json({ error: error.message });
+    if (
+      error.message === "Token Missing" ||
+      error.message === "Invalid Token"
+    ) {
+      res.status(401).send(error.message);
     } else {
-      res.status(400).send("Invalid Token");
+      res.status(400).send(error.message);
     }
   }
 };

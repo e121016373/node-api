@@ -1,11 +1,11 @@
 const express = require("express");
 const router = express.Router();
 const Item = require("../model/Item");
-const verify = require("../middleware/auth");
+const auth = require("../middleware/auth");
 
 // Retrieve all items
 // @route GET /api/items
-router.get("/", async (req, res) => {
+router.get("/", auth, async (req, res) => {
   try {
     const items = await Item.find();
 
@@ -16,15 +16,15 @@ router.get("/", async (req, res) => {
 });
 
 // Add a new item
-// @route GET /api/items
-router.post("/", verify, async (req, res) => {
+// @route POST /api/items
+router.post("/", auth, async (req, res) => {
   try {
     const { body } = req;
 
     const item = new Item({
-      name: body.name,
+      description: body.description,
       category: body.category,
-      owner: body.owner,
+      owner: req.user.username,
     });
 
     const response = await item.save();
@@ -35,38 +35,57 @@ router.post("/", verify, async (req, res) => {
 });
 
 // Update an item
-// @route POST /api/items/:id
-router.put("/:id", verify, async (req, res) => {
+// @route PUT /api/items/:id
+router.put("/:id", auth, async (req, res) => {
   try {
     const { id } = req.params;
     const { body } = req;
+    const { username } = req.user;
+
+    const item = await Item.findById(id);
+    if (item.owner !== username)
+      throw new Error("You can only update your own item");
 
     const updatedItem = await Item.updateOne(
       { _id: id },
       {
         $set: {
-          name: body.name,
+          description: body.description,
           category: body.category,
-          owner: body.owner,
+          owner: username,
         },
       }
     );
     return res.status(200).json(updatedItem);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    if (error.message === "You can only update your own item") {
+      res.status(400).json({ error: error.message });
+    } else {
+      res.status(500).json({ error: error.message });
+    }
   }
 });
 
 // Delete an item
 // @route DELETE /api/items/:id
-router.delete("/:id", verify, async (req, res) => {
+router.delete("/:id", auth, async (req, res) => {
   try {
     const { id } = req.params;
+    const { username } = req.user;
 
-    const removedItem = await Item.findByIdAndDelete({ _id: id });
+    const item = await Item.findById(id);
+    if (!item) throw new Error("Item not found");
+    if (item.owner !== username)
+      throw new Error("You can only update your own item");
+
+    const removedItem = await Item.findByIdAndDelete(id);
     return res.status(200).json(removedItem);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    if (error.message === "Item not found") {
+      res.status(400).json({ error: error.message });
+    } else {
+      res.status(500).json({ error: error.message });
+    }
   }
 });
 
