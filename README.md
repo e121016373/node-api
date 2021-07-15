@@ -25,7 +25,7 @@ Example body:
 }
 ```
 
-2. `POST /api/auth/login` to login a user, <b>it will return a `auth-token`, and you will need to include it in the headers of all of the following endpoints</b>
+2. `POST /api/auth/login` to login a user, <b>it will return a `token`, and you will need to put the token in `auth-token` of the headers of all of the following endpoints</b>
 
 Example body: same as above
 
