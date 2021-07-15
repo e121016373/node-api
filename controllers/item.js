@@ -18,6 +18,13 @@ const addItem = async (req, res) => {
   try {
     const { body } = req;
 
+    if (!body.description || !body.category) {
+      return res.status(400).json({
+        success: false,
+        error: "Please enter both description and category",
+      });
+    }
+
     const item = new Item({
       description: body.description,
       category: body.category,
@@ -38,6 +45,13 @@ const updateItem = async (req, res) => {
     const { id } = req.params;
     const { body } = req;
     const { username } = req.user;
+
+    if (!body.description || !body.category) {
+      return res.status(400).json({
+        success: false,
+        error: "Please enter both description and category",
+      });
+    }
 
     const item = await Item.findById(id);
     if (!item) {
@@ -120,7 +134,7 @@ const searchItem = async (req, res) => {
     if (!item || item.length <= 0) {
       return res.status(200).json({ success: true, message: "No items found" });
     }
-    
+
     return res.status(200).json({ success: true, data: item });
   } catch (error) {
     return res.status(500).json({ error: error.message });
