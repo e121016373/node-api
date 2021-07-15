@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
 
-const auth = (req, res, next) => {
+const isAuthenticated = (req, res, next) => {
   try {
     const token = req.header("auth-token");
     if (!token) throw new Error("Token Missing");
@@ -21,4 +21,4 @@ const auth = (req, res, next) => {
   }
 };
 
-module.exports = auth;
+module.exports = isAuthenticated;

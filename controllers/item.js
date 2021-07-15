@@ -117,8 +117,10 @@ const searchItem = async (req, res) => {
       filter.push({ owner: { $in: [...owners] } });
 
     const item = await Item.find({ $or: filter });
-    if (!item || item.length <= 0)
+    if (!item || item.length <= 0) {
       return res.status(200).json({ success: true, message: "No items found" });
+    }
+    
     return res.status(200).json({ success: true, data: item });
   } catch (error) {
     return res.status(500).json({ error: error.message });

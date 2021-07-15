@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const auth = require("../middleware/auth");
+const isAuthenticated = require("../middleware/auth");
 const {
   getItems,
   addItem,
@@ -10,7 +10,7 @@ const {
 } = require("../controllers/item");
 
 // Middleware
-router.use(auth);
+router.use(isAuthenticated);
 
 // Endpoints
 router
