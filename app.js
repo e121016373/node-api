@@ -14,7 +14,7 @@ if (process.env.NODE_ENV === "development") {
 }
 connectDB();
 
-app.use("/api/items", itemRoute);
+app.use("/api/item", itemRoute);
 app.use("/api/auth", authRoute);
 
 app.listen(process.env.PORT, () => `Server running on ${process.env.PORT}`);
