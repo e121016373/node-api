@@ -9,9 +9,9 @@ router.get("/", auth, async (req, res) => {
   try {
     const items = await Item.find();
 
-    return res.status(200).json(items);
+    return res.status(200).json({ success: true, data: items });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -28,9 +28,9 @@ router.post("/", auth, async (req, res) => {
     });
 
     const response = await item.save();
-    return res.status(200).json(response);
+    return res.status(200).json({ success: true, data: response });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -43,8 +43,16 @@ router.put("/:id", auth, async (req, res) => {
     const { username } = req.user;
 
     const item = await Item.findById(id);
-    if (item.owner !== username)
-      throw new Error("You can only update your own item");
+    if (!item) {
+      return res
+        .status(404)
+        .json({ success: false, error: "Item is not found" });
+    }
+    if (item.owner !== username) {
+      return res
+        .status(400)
+        .json({ success: false, error: "You are not the owner of this item" });
+    }
 
     const updatedItem = await Item.updateOne(
       { _id: id },
@@ -56,13 +64,9 @@ router.put("/:id", auth, async (req, res) => {
         },
       }
     );
-    return res.status(200).json(updatedItem);
+    return res.status(200).json({ success: true, data: updatedItem });
   } catch (error) {
-    if (error.message === "You can only update your own item") {
-      res.status(400).json({ error: error.message });
-    } else {
-      res.status(500).json({ error: error.message });
-    }
+    return res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -74,18 +78,53 @@ router.delete("/:id", auth, async (req, res) => {
     const { username } = req.user;
 
     const item = await Item.findById(id);
-    if (!item) throw new Error("Item not found");
-    if (item.owner !== username)
-      throw new Error("You can only update your own item");
+    if (!item) {
+      return res
+        .status(404)
+        .json({ success: false, error: "Item is not found" });
+    }
+    if (item.owner !== username) {
+      return res
+        .status(400)
+        .json({ success: false, error: "You are not the owner of this item" });
+    }
 
     const removedItem = await Item.findByIdAndDelete(id);
-    return res.status(200).json(removedItem);
+    return res.status(200).json({ success: true, data: removedItem });
   } catch (error) {
-    if (error.message === "Item not found") {
-      res.status(400).json({ error: error.message });
-    } else {
-      res.status(500).json({ error: error.message });
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Search for items based on the given filter
+// @route POST /api/items/search
+router.post("/search", auth, async (req, res) => {
+  try {
+    const { description, categories, owners } = req.body;
+    if (
+      !description &&
+      (!categories || categories.length <= 0) &&
+      (!owners || owners.length <= 0)
+    ) {
+      return res
+        .status(400)
+        .json({ success: false, error: "The filter is empty" });
     }
+
+    const filter = [];
+    if (description)
+      filter.push({ description: { $regex: new RegExp(description) } });
+    if (categories && categories.length > 0)
+      filter.push({ category: { $in: [...categories] } });
+    if (owners && owners.length > 0)
+      filter.push({ owner: { $in: [...owners] } });
+
+    const item = await Item.find({ $or: filter });
+    if (!item || item.length <= 0)
+      return res.status(200).json({ success: true, message: "No items found" });
+    return res.status(200).json({ success: true, data: item });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
   }
 });
 

@@ -8,10 +8,19 @@ const User = require("../model/User");
 router.post("/register", async (req, res) => {
   try {
     const { username, password } = req.body;
-    if (!username || !password) throw new Error("Please enter all information");
+    if (!username || !password) {
+      return res.status(400).json({
+        success: false,
+        error: "Please enter both username and password",
+      });
+    }
 
     const foundUser = await User.findOne({ username });
-    if (foundUser) throw new Error("User already exists");
+    if (foundUser) {
+      return res
+        .status(400)
+        .json({ success: false, error: "User already exists" });
+    }
 
     const salt = await bcrypt.genSalt();
     const passwordHashed = await bcrypt.hash(password, salt);
@@ -22,16 +31,9 @@ router.post("/register", async (req, res) => {
     });
 
     const response = await user.save();
-    res.status(200).json(response);
+    res.status(200).json({ success: true, data: response });
   } catch (error) {
-    if (
-      error.message === "Please enter all information" ||
-      error.message === "User already exists"
-    ) {
-      res.status(400).json({ error: error.message });
-    } else {
-      res.status(500).json({ error: error.message });
-    }
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -40,38 +42,42 @@ router.post("/register", async (req, res) => {
 router.post("/login", async (req, res) => {
   try {
     const { username, password } = req.body;
-    if (!username || !password) throw new Error("Please enter all information");
+    if (!username || !password) {
+      return res.status(400).json({
+        success: false,
+        error: "Please enter both username and password",
+      });
+    }
 
     const user = await User.findOne({ username });
-    if (!user) throw new Error("User does not exist");
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        error: "User does not exist",
+      });
+    }
 
     const isValid = await bcrypt.compare(password, user.password);
-    if (!isValid) throw new Error("Passowrd is not correct");
+    if (!isValid) {
+      return res
+        .status(400)
+        .json({ success: false, error: "Passowrd is not correct" });
+    }
 
     const token = jwt.sign(
       { _id: user._id, username: user.username },
       process.env.TOKEN_SECRET,
       { expiresIn: 3600 }
     );
-    res
-      .header("auth-token", token)
-      .status(200)
-      .json({
-        message: "User is logged in",
-        token,
-        userid: user._id,
-        username,
-      });
+    return res.header("auth-token", token).status(200).json({
+      success: true,
+      message: "User is logged in",
+      token,
+      userid: user._id,
+      username,
+    });
   } catch (error) {
-    if (
-      error.message === "User does not exist" ||
-      error.message === "Please enter all information" ||
-      error.message === "Passowrd is not correct"
-    ) {
-      res.status(400).json({ error: error.message });
-    } else {
-      res.status(500).json({ error: error.message });
-    }
+    return res.status(500).json({ error: error.message });
   }
 });
 
